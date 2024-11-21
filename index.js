@@ -79,11 +79,11 @@ app.post("/api/post",(req,res) => {
 //API
 //PUT - UPDATE
 app.use(express.urlencoded({ extended: false }))
-app.put("/api/update:id", (req, res) => {
+app.put("/api/update/:id", (req, res) => {
     console.log('Received PUT request for product ID:', req.params.id);
-  const id = req.params.id
-  const prodName = req.body.prodName
-  const srp = req.body.srp
+    const id = req.params.id
+    const prodName = req.body.prodName
+    const srp = req.body.srp
   
 
   connection.query(`UPDATE products SET product_name='${prodName}',srp='${srp}' WHERE id='${id}'`,(err, rows, fields) => {
@@ -107,26 +107,30 @@ app.delete("/api/delete/:id",(req,res) => {
 
 
 //api for login 
-
-
+app.use(express.urlencoded({extended: false}))
 app.post('/api/login', (req, res) => {
     let { username, password } = req.body;
-    
 
-    connection.query(`SELECT * FROM user_credentials_tbl WHERE username ='${username}'`,(err, results) => {
+    connection.query(`SELECT * FROM user_credentials_tbl WHERE username = '${username}'`, (err, results) => {
         if (err) {
             res.status(500).json({ success: false, message: 'Internal Server Error' });
         } else if (results.length > 0) {
-            res.json({
-                success: true,
-                message: 'LogIn Success',
-                userType: results[0].userType
-            });
+            // Compare entered password with stored password (plain text comparison)
+            if (password === results[0].password) {
+                res.json({
+                    success: true,
+                    message: 'Login Success',
+                    userType: results[0].userType
+                });
+            } else {
+                res.json({ success: false, message: 'Invalid password' });
+            }
         } else {
-            res.json({ success: false, message: 'Invalid username or password' });
+            res.json({ success: false, message: 'Invalid username' });
         }
     });
 });
+
 
 
 
