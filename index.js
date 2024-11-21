@@ -1,8 +1,9 @@
-const express=require('express')
-const app=express()
-const moment=require('moment')
+const express = require('express')
+const app = express()
+const moment = require('moment')
 const mysql = require("mysql")
 const cors = require('cors')
+const bcrypt = require("bcrypt")
 
 const PORT=process.env.PORT || 1804
 
@@ -13,13 +14,14 @@ const logger = (req,res,next) => {
 
 app.use(logger)
 app.use(cors())
+app.use(express.json());
 
 // connection to mysql
 const connection = mysql.createConnection({
     host:"localhost",
     user:"root",
     password:"",
-    database:"inventory"
+    database:"system_database"
 })
 
 //initilization of  connection
@@ -77,16 +79,14 @@ app.post("/api/post",(req,res) => {
 //API
 //PUT - UPDATE
 app.use(express.urlencoded({ extended: false }))
-app.put("/api/update", (req, res) => {
-  const prodCode = req.body.prodCode
+app.put("/api/update:id", (req, res) => {
+    console.log('Received PUT request for product ID:', req.params.id);
+  const id = req.params.id
   const prodName = req.body.prodName
-  const description = req.body.description
-  const cost = req.body.cost
   const srp = req.body.srp
-  const quantity = req.body.quantity
-  const id = req.body.id
+  
 
-  connection.query(`UPDATE products SET product_code='${prodCode}',product_name='${prodName}',description='${description}',cost='${cost}',srp='${srp}',quantity='${quantity}' WHERE id='${id}'`,(err, rows, fields) => {
+  connection.query(`UPDATE products SET product_name='${prodName}',srp='${srp}' WHERE id='${id}'`,(err, rows, fields) => {
       if (err) throw err
       res.json({ msg: `Successfully updated!` })
     }
@@ -103,6 +103,31 @@ app.delete("/api/delete/:id",(req,res) => {
         res.json({ msg: `Successfully Deleted`})
     })
 })
+
+
+
+//api for login 
+
+
+app.post('/api/login', (req, res) => {
+    let { username, password } = req.body;
+    
+
+    connection.query(`SELECT * FROM user_credentials_tbl WHERE username ='${username}'`,(err, results) => {
+        if (err) {
+            res.status(500).json({ success: false, message: 'Internal Server Error' });
+        } else if (results.length > 0) {
+            res.json({
+                success: true,
+                message: 'LogIn Success',
+                userType: results[0].userType
+            });
+        } else {
+            res.json({ success: false, message: 'Invalid username or password' });
+        }
+    });
+});
+
 
 
 app.listen(1804, () => {
